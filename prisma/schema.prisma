@@ -1,0 +1,124 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int     @id @default(autoincrement())
+  name         String?
+  username     String  @unique
+  email        String  @unique
+  profileImage String?
+  password     String
+  phone        String?
+
+  createdAt DateTime @default(now())
+  updateAt  DateTime @updatedAt
+
+  Order             Order[]
+}
+
+/////////////////////////////////
+// Modelado para los productos //
+/////////////////////////////////
+
+model Product {
+  id             Int     @id @default(autoincrement())
+  name           String
+  slug           String @unique
+  description    String
+  cost           Float
+  price          Float
+  discount_price Float?
+  stock          Int
+  image          String?
+
+  categories Category @relation(fields: [categoryId], references: [id])
+  categoryId Int
+
+  tags Tag[]
+
+  status   PublicationStatus @relation(fields: [statusId], references: [id])
+  statusId Int
+
+  OrderItem OrderItem[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([name, price])
+}
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String
+  products Product[]
+}
+
+model Tag {
+  id       Int       @id @default(autoincrement())
+  name     String
+  products Product[]
+}
+
+model PublicationStatus {
+  id       Int       @id @default(autoincrement())
+  name     String
+  products Product[]
+}
+
+/////////////////////////////////
+/// Modelado para las ordenes ///
+/////////////////////////////////
+
+model Order {
+  id Int @id @default(autoincrement())
+
+  user   User? @relation(fields: [userId], references: [id])
+  userId Int?
+
+  status       String
+  total_amount Float
+  email        String
+  items        OrderItem[]
+
+  paymentId Int?
+  payment   Payment? @relation(fields: [paymentId], references: [id])
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model OrderItem {
+  id Int @id @default(autoincrement())
+
+  order   Order @relation(fields: [orderId], references: [id])
+  orderId Int
+
+  product   Product @relation(fields: [productId], references: [id])
+  productId Int
+
+  quantity Int
+  price    Float
+}
+
+model Payment {
+  id Int @id @default(autoincrement())
+
+  method        String
+  amount        Float
+  status        String
+  transactionId String?
+  created_at    DateTime @default(now())
+  Order         Order[]
+}
